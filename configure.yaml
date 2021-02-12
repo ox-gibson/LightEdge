@@ -1,6 +1,6 @@
 ---
 - name: Install packages
-  hosts: localhost 
+  hosts: all 
   become: true
   tasks:
     #- set_fact: inventory_hostname=tx01 #FOR TESTING PURPOSES ONLY
@@ -80,7 +80,7 @@
       lineinfile:
         dest: "/etc/ssh/sshd_config"
         regexp: "Port "
-        line: "{{ ssh_port }}"
+        line: "Port {{ ssh_port }}"
       
     - name: Copy over the NTP configuration
       template: 
