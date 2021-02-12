@@ -6,7 +6,11 @@ There are multiple Linux systems that need to be configured in a single Ansible 
 This playbook assumes these are fresh servers
 
 Files:
+
 AnsibleScenerio.txt - Scenerio provided by LightEdge
+
 configure.yaml - the main playbook 
+
 inventory - Updated inventory from AnsibleScenerio.txt
+
 ntp.j2 - Modified ntp.conf file that will be updated depending on the server group
