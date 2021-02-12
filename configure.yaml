@@ -3,7 +3,6 @@
   hosts: all 
   become: true
   tasks:
-    #- set_fact: inventory_hostname=tx01 #FOR TESTING PURPOSES ONLY
     - set_fact: 
         ntp_server=10.0.2.252
         ntp_timezone='America/New_York'
@@ -35,18 +34,22 @@
            - mariadb
            - nginx
            - ntp
+           - ssh
 
       - name: allow ntp through firewall
-        command: firewall-cmd --add-service=ntp --permanent
+        command: firewall-cmd --zone=public --add-port=123/udp --permanent
  
       - name: firewall reload
         command: firewall-cmd --reload
- 
-      - name: Make sure Chrony is started up
-        service: 
-          name: chronyd 
-          state: running enabled=yes
 
+      - name: Enable services 
+        service: 
+          name: "{{ item }}"
+          enabled: yes
+        loop:
+          - ntp
+          - nginx
+ 
       when: ansible_distribution == 'Red Hat Enterprise Linux'
   
     - name: Configure Ubuntu 
