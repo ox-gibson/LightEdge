@@ -1,0 +1,63 @@
+Ansible Scenario
+
+Description:
+There are multiple Linux systems that need to be configured in a single Ansible playbook. One group containing 3 servers is located in the Texas site. Another group of 3 servers is located in the North Carolina site. The servers in North Carolina are running Redhat Enterprise Linux 8 and the Texas servers are running Ubuntu 20.04. All servers are reachable by the Ansible server. 
+
+Inventory:
+You have been given the following Ansible inventory file. The inventory file can be modified if needed.
+
+all:
+  children:
+    NC01:
+      hosts:
+        nc01:
+          ansible_host=192.0.2.52
+        nc02:
+          ansible_host=192.0.2.53
+        nc03:
+          ansible_host=192.0.2.54
+    TX01:
+      hosts:
+        tx01:
+          ansible_host=192.0.3.52
+        tx02:
+          ansible_host=192.0.3.53
+        tx03:
+          ansible_host=192.0.3.54
+Configuration Automation:
+The following configuration needs to be applied to all of the Linux hosts by the Ansible playbook:
+1.	Systems should be fully updated.
+2.	On the ubuntu systems install tree, docker, and ansible. On the redhat systems install podman, mariadb, and nginx.
+3.	NTP should be fully configured with the site specific configuration below.
+4.	Once all of the NTP configuration changes have been made the NTP service needs to be restarted.
+5.	Add the host to the CMDB via API:
+a.	The API call should be sent to https://192.0.1.100 via a POST
+b.	The body must be sent in JSON format.
+c.	The body must contain the following JSON structure, the elements in <> should be replaced with the host’s unique values:
+{  
+          "SystemGroupName":"<sitename>", 
+   "SystemHostName":”<hostname>”,
+   "SystemOS":"<OS name>",
+   “CreationDate”:“<today’s date>”,
+   “SystemIPAddress: “<IP address>”
+       }
+d.	Success if status of 201 is received.
+e.	Failure if the output of the API request does not contain the message “System successfully added.”
+6.	Print the results of the API request.
+
+Site Specific Configuration:
+The following configuration should be applied to the Linux hosts in each respective site:
+North Carolina:
+1.	These hosts are running ssh on port 2222.
+2.	NTP server is 192.0.2.252
+3.	Configure NTP with appropriate time zone for the location.
+4.	SItename is NC01
+Texas:
+1.	These hosts are running ssh on port 22.
+2.	NTP server is 192.0.3.252
+3.	Configure NTP with appropriate time zone for the location.
+4.	SItename is TX01
+
+Results:
+Please provide your Ansible playbook, the inventory file you would use if modified from above, and any other additional files needed by your playbook.
+

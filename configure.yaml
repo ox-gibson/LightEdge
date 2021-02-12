@@ -1,0 +1,118 @@
+---
+- name: Install packages
+  hosts: localhost 
+  become: true
+  tasks:
+    #- set_fact: inventory_hostname=tx01 #FOR TESTING PURPOSES ONLY
+    - set_fact: 
+        ntp_server=10.0.2.252
+        ntp_timezone='America/New_York'
+        sitename=NC01
+        ssh_port=2222
+      when: inventory_hostname in groups['NC01']
+
+    - set_fact: 
+        ntp_server=10.0.3.252
+        ntp_timezone='America/Chicago'
+        sitename=TX01
+        ssh_port=22
+      when: inventory_hostname in groups['TX01']
+
+      when: ansible_distribution == 'Red Hat Enterprise Linux'
+
+    - name: Configure RHEL
+      block:
+      - name: Update all Packages on RHEL
+        yum:
+          name: '*'
+          state: latest
+
+      - name: Install packages
+        yum:
+         state: latest
+         name:
+           - podman
+           - mariadb
+           - nginx
+           - ntp
+
+      - name: allow ntp through firewall
+        command: firewall-cmd --add-service=ntp --permanent
+ 
+      - name: firewall reload
+        command: firewall-cmd --reload
+ 
+      - name: Make sure Chrony is started up
+        service: 
+          name: chronyd 
+          state: running enabled=yes
+
+      when: ansible_distribution == 'Red Hat Enterprise Linux'
+  
+    - name: Configure Ubuntu 
+      block:
+      - name: Update all packages on Ubuntu
+        apt:
+          upgrade: yes
+          update_cache: yes
+          cache_valid_time: 86400
+    
+      - name: Install packages 
+        apt:
+          name:
+            - tree
+            - docker
+            - ansible
+            - ssh
+            - ntp
+          state: present
+          update_cache: true
+
+      - name: Allow ntp through firewall
+        ufw:
+          rule: allow
+          port: 123
+          state: reloaded
+
+      when: ansible_distribution == 'Ubuntu'
+      
+    - name: Update ssh port
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "Port "
+        line: "{{ ssh_port }}"
+      
+    - name: Copy over the NTP configuration
+      template: 
+        src: ntp.j2 
+        dest: /etc/ntp.conf
+
+    - name: Set timezone
+      command: timedatectl set-timezone "{{ ntp_timezone }}" 
+
+    - name: Restart ntp and ssh services 
+      service: 
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - ntp
+        - ssh
+
+    - name: add user to virtual host
+      uri: 
+        url: http://192.0.1.100
+        method: POST
+        return_content: yes
+        body: >
+          ' { "SystemGroupName: {{ sitename }}, 
+               SystemHostName : {{ ansible_hostname }}, 
+               SystemOS : {{ ansible_distribution }}, 
+               CreationDate : {{ ansible_date_time.date }}, 
+               SystemIPAddress : {{ ansible_default_ipv4.address }}" } '
+        body_format: json
+        status_code: 201
+      register: _post_return
+
+    - name: Print results of API Request
+      debug:
+        var: _post_return.json
